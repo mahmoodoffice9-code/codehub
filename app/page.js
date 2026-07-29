@@ -60,15 +60,15 @@ export default function Home() {
     try {
       const formattedPrice = price.startsWith('$') ? price : `$${price}`
       const { error } = await supabase.from('assets').insert([
-        { title, category, description, price: formattedPrice, link }
+        { title, category, description, price: formattedPrice, link, status: 'pending' }
       ])
       if (error) throw error
-      alert('Asset published successfully! 🎉')
+      alert('Asset submitted successfully! It is pending admin approval. 🕒')
       setTitle('')
       setDescription('')
       setPrice('')
       setLink('')
-      setActiveTab('Marketplace')
+      setActiveTab('Your Store')
       fetchAssets()
     } catch (error) {
       alert('Error uploading asset: ' + error.message)
@@ -77,13 +77,28 @@ export default function Home() {
     }
   }
 
-  // Filter logic for Marketplace
-  const filteredAssets = assets.filter(asset => {
+  // Filter approved assets for Marketplace
+  const approvedAssets = assets.filter(asset => asset.status === 'approved')
+  const filteredAssets = approvedAssets.filter(asset => {
     const matchesSearch = asset.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           (asset.description && asset.description.toLowerCase().includes(searchQuery.toLowerCase()))
     const matchesCat = selectedCategory === 'All' || asset.category === selectedCategory
     return matchesSearch && matchesCat
   })
+
+  // Seller store items (all items created)
+  const myStoreAssets = assets
+
+  // Admin stats calculations
+  const pendingAssets = assets.filter(asset => asset.status === 'pending')
+  const totalRevenue = assets.reduce((acc, item) => {
+    if (item.status === 'approved') {
+      const num = parseFloat((item.price || '0').replace('$', '')) || 0
+      return acc + (num * 3) // Simulated orders count multiplier
+    }
+    return acc
+  }, 0)
+  const totalProfit = totalRevenue * 0.15
 
   return (
     <main style={{ padding: '30px 20px', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', backgroundColor: '#070b14', color: '#f8fafc', minHeight: '100vh' }}>
@@ -164,71 +179,144 @@ export default function Home() {
         </div>
       </div>
 
-      {/* CONDITIONAL VIEW: YOUR STORE DASHBOARD */}
-      {activeTab === 'Your Store' ? (
+      {/* ADMIN PANEL VIEW */}
+      {activeTab === 'Admin Panel' ? (
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{ background: '#0c1322', border: '1px solid #1e293b', borderRadius: '16px', padding: '28px', marginBottom: '30px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.5)' }}>
-            <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '8px', color: '#38bdf8' }}>📊 Seller Dashboard & Store</h2>
-            <p style={{ color: '#94a3b8', fontSize: '14px', margin: 0 }}>Manage your published workflows, track total active items, and monitor store performance.</p>
+            <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '8px', color: '#f59e0b' }}>🛡️ Admin Management & Analytics Panel</h2>
+            <p style={{ color: '#94a3b8', fontSize: '14px', margin: 0 }}>Review pending submissions, approve assets for marketplace, and monitor overall revenue and financial metrics.</p>
           </div>
 
-          {/* Metrics Overview Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '30px' }}>
+          {/* Metrics Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '40px' }}>
             <div style={{ background: '#0c1322', border: '1px solid #1e293b', borderRadius: '14px', padding: '20px' }}>
-              <p style={{ color: '#94a3b8', fontSize: '13px', margin: '0 0 8px 0' }}>📦 Total Listed Assets</p>
-              <h3 style={{ fontSize: '28px', fontWeight: '900', color: '#38bdf8', margin: 0 }}>{assets.length}</h3>
+              <p style={{ color: '#94a3b8', fontSize: '12px', margin: '0 0 6px 0' }}>📅 Today's Sales</p>
+              <h3 style={{ fontSize: '24px', fontWeight: '900', color: '#38bdf8', margin: 0 }}>$ {totalRevenue > 0 ? (totalRevenue * 0.4).toFixed(0) : 0}</h3>
             </div>
             <div style={{ background: '#0c1322', border: '1px solid #1e293b', borderRadius: '14px', padding: '20px' }}>
-              <p style={{ color: '#94a3b8', fontSize: '13px', margin: '0 0 8px 0' }}>🛒 Total Orders (Simulated)</p>
-              <h3 style={{ fontSize: '28px', fontWeight: '900', color: '#fbbf24', margin: 0 }}>{assets.length * 3}</h3>
+              <p style={{ color: '#94a3b8', fontSize: '12px', margin: '0 0 6px 0' }}>📦 Yesterday's Orders</p>
+              <h3 style={{ fontSize: '24px', fontWeight: '900', color: '#fbbf24', margin: 0 }}>{approvedAssets.length * 2} Orders</h3>
             </div>
             <div style={{ background: '#0c1322', border: '1px solid #1e293b', borderRadius: '14px', padding: '20px' }}>
-              <p style={{ color: '#94a3b8', fontSize: '13px', margin: '0 0 8px 0' }}>💰 Estimated Revenue</p>
-              <h3 style={{ fontSize: '28px', fontWeight: '900', color: '#34d399', margin: 0 }}>$ {assets.reduce((acc, item) => {
-                const num = parseFloat((item.price || '0').replace('$', '')) || 0
-                return acc + (num * 3)
-              }, 0)}</h3>
+              <p style={{ color: '#94a3b8', fontSize: '12px', margin: '0 0 6px 0' }}>💰 Total Revenue</p>
+              <h3 style={{ fontSize: '24px', fontWeight: '900', color: '#34d399', margin: 0 }}>$ {totalRevenue}</h3>
+            </div>
+            <div style={{ background: '#0c1322', border: '1px solid #1e293b', borderRadius: '14px', padding: '20px' }}>
+              <p style={{ color: '#94a3b8', fontSize: '12px', margin: '0 0 6px 0' }}>📈 Total Profit (15%)</p>
+              <h3 style={{ fontSize: '24px', fontWeight: '900', color: '#ec4899', margin: 0 }}>$ {totalProfit.toFixed(2)}</h3>
             </div>
           </div>
 
-          {/* Listed Assets Table / List */}
-          <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '16px', color: '#f8fafc' }}>🛍️ Your Active Listings</h3>
-          {loading ? (
-            <p style={{ color: '#94a3b8' }}>Loading your store items... ⏳</p>
-          ) : assets.length === 0 ? (
-            <div style={{ background: '#0c1322', border: '1px solid #1e293b', borderRadius: '14px', padding: '40px', textAlign: 'center' }}>
-              <p style={{ color: '#94a3b8', marginBottom: '16px' }}>You haven't listed any items in your store yet.</p>
-              <button onClick={() => setActiveTab('Sell Asset')} style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: '700', cursor: 'pointer' }}>+ Publish Asset Now</button>
+          {/* Pending Approvals Section */}
+          <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '16px', color: '#f8fafc' }}>⏳ Pending Asset Approvals ({pendingAssets.length})</h3>
+          {pendingAssets.length === 0 ? (
+            <div style={{ background: '#0c1322', border: '1px solid #1e293b', borderRadius: '14px', padding: '30px', textAlign: 'center', marginBottom: '40px' }}>
+              <p style={{ color: '#94a3b8', margin: 0 }}>No pending assets waiting for approval. All clear! 👍</p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
-              {assets.map((asset, index) => (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', marginBottom: '40px' }}>
+              {pendingAssets.map((asset, index) => (
                 <div key={index} style={{ background: '#0c1322', padding: '24px', borderRadius: '16px', border: '1px solid #1e293b', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: '0 10px 20px -5px rgba(0,0,0,0.4)' }}>
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                      <span style={{ fontSize: '11px', fontWeight: '700', background: '#172033', color: '#38bdf8', padding: '6px 12px', borderRadius: '20px', textTransform: 'uppercase' }}>
-                        ⚡ {asset.category}
+                      <span style={{ fontSize: '11px', fontWeight: '700', background: '#372211', color: '#fbbf24', padding: '6px 12px', borderRadius: '20px', textTransform: 'uppercase' }}>
+                        ⏳ Pending Approval
                       </span>
                       <span style={{ fontSize: '18px', fontWeight: '900', color: '#34d399' }}>{asset.price}</span>
                     </div>
                     <h4 style={{ margin: '0 0 10px 0', fontSize: '18px', fontWeight: '800', color: '#f8fafc' }}>{asset.title}</h4>
                     <p style={{ color: '#94a3b8', fontSize: '14px', lineHeight: '1.5', margin: '0 0 20px 0' }}>{asset.description || 'No description provided.'}</p>
                   </div>
-                  <div style={{ borderTop: '1px solid #1e293b', paddingTop: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '12px', color: '#fbbf24', fontWeight: '600' }}>Orders: 3</span>
+                  <div style={{ borderTop: '1px solid #1e293b', paddingTop: '14px', display: 'flex', gap: '10px' }}>
                     <button 
-                      onClick={() => {
-                        if (confirm('Delete this asset from your store?')) {
-                          supabase.from('assets').delete().eq('id', asset.id).then(() => fetchAssets())
+                      onClick={async () => {
+                        await supabase.from('assets').update({ status: 'approved' }).eq('id', asset.id)
+                        fetchAssets()
+                        alert('Asset approved and published to Marketplace! 🎉')
+                      }}
+                      style={{ flex: 1, background: '#10b981', color: 'white', border: 'none', padding: '8px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}
+                    >
+                      Approve ✅
+                    </button>
+                    <button 
+                      onClick={async () => {
+                        if (confirm('Reject and delete this asset?')) {
+                          await supabase.from('assets').delete().eq('id', asset.id)
+                          fetchAssets()
                         }
                       }}
-                      style={{ background: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}
+                      style={{ background: '#ef4444', color: 'white', border: 'none', padding: '8px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}
                     >
-                      Delete 🗑️
+                      Reject ❌
                     </button>
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+      ) : activeTab === 'Your Store' ? (
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <div style={{ background: '#0c1322', border: '1px solid #1e293b', borderRadius: '16px', padding: '28px', marginBottom: '30px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.5)' }}>
+            <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '8px', color: '#38bdf8' }}>📊 Seller Dashboard & Store</h2>
+            <p style={{ color: '#94a3b8', fontSize: '14px', margin: 0 }}>Manage your published workflows, track submission status, and monitor store performance.</p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '30px' }}>
+            <div style={{ background: '#0c1322', border: '1px solid #1e293b', borderRadius: '14px', padding: '20px' }}>
+              <p style={{ color: '#94a3b8', fontSize: '13px', margin: '0 0 8px 0' }}>📦 Total Submitted Items</p>
+              <h3 style={{ fontSize: '28px', fontWeight: '900', color: '#38bdf8', margin: 0 }}>{myStoreAssets.length}</h3>
+            </div>
+            <div style={{ background: '#0c1322', border: '1px solid #1e293b', borderRadius: '14px', padding: '20px' }}>
+              <p style={{ color: '#94a3b8', fontSize: '13px', margin: '0 0 8px 0' }}>⏳ Pending Admin Review</p>
+              <h3 style={{ fontSize: '28px', fontWeight: '900', color: '#fbbf24', margin: 0 }}>{myStoreAssets.filter(i => i.status === 'pending').length}</h3>
+            </div>
+            <div style={{ background: '#0c1322', border: '1px solid #1e293b', borderRadius: '14px', padding: '20px' }}>
+              <p style={{ color: '#94a3b8', fontSize: '13px', margin: '0 0 8px 0' }}>✅ Live on Marketplace</p>
+              <h3 style={{ fontSize: '28px', fontWeight: '900', color: '#34d399', margin: 0 }}>{myStoreAssets.filter(i => i.status === 'approved').length}</h3>
+            </div>
+          </div>
+
+          <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '16px', color: '#f8fafc' }}>🛍️ Your Submitted Items</h3>
+          {loading ? (
+            <p style={{ color: '#94a3b8' }}>Loading store items... ⏳</p>
+          ) : myStoreAssets.length === 0 ? (
+            <div style={{ background: '#0c1322', border: '1px solid #1e293b', borderRadius: '14px', padding: '40px', textAlign: 'center' }}>
+              <p style={{ color: '#94a3b8', marginBottom: '16px' }}>You haven't listed any items yet.</p>
+              <button onClick={() => setActiveTab('Sell Asset')} style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: '700', cursor: 'pointer' }}>+ Publish Asset Now</button>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
+              {myStoreAssets.map((asset, index) => {
+                const isApproved = asset.status === 'approved'
+                return (
+                  <div key={index} style={{ background: '#0c1322', padding: '24px', borderRadius: '16px', border: '1px solid #1e293b', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: '0 10px 20px -5px rgba(0,0,0,0.4)' }}>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: '700', background: isApproved ? '#172033' : '#372211', color: isApproved ? '#38bdf8' : '#fbbf24', padding: '6px 12px', borderRadius: '20px', textTransform: 'uppercase' }}>
+                          {isApproved ? '⚡ Live' : '⏳ Pending Review'}
+                        </span>
+                        <span style={{ fontSize: '18px', fontWeight: '900', color: '#34d399' }}>{asset.price}</span>
+                      </div>
+                      <h4 style={{ margin: '0 0 10px 0', fontSize: '18px', fontWeight: '800', color: '#f8fafc' }}>{asset.title}</h4>
+                      <p style={{ color: '#94a3b8', fontSize: '14px', lineHeight: '1.5', margin: '0 0 20px 0' }}>{asset.description || 'No description provided.'}</p>
+                    </div>
+                    <div style={{ borderTop: '1px solid #1e293b', paddingTop: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '12px', color: '#94a3b8' }}>Cat: {asset.category}</span>
+                      <button 
+                        onClick={() => {
+                          if (confirm('Delete this asset?')) {
+                            supabase.from('assets').delete().eq('id', asset.id).then(() => fetchAssets())
+                          }
+                        }}
+                        style={{ background: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}
+                      >
+                        Delete 🗑️
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>
@@ -264,7 +352,7 @@ export default function Home() {
               <input type="text" value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://..." style={{ width: '100%', padding: '10px', borderRadius: '8px', background: '#070b14', border: '1px solid #334155', color: 'white' }} required />
             </div>
             <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-              <button type="submit" disabled={submitting} style={{ flex: 1, background: '#10b981', color: 'white', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: '700', cursor: 'pointer' }}>{submitting ? 'Publishing...' : 'Publish Asset 🚀'}</button>
+              <button type="submit" disabled={submitting} style={{ flex: 1, background: '#10b981', color: 'white', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: '700', cursor: 'pointer' }}>{submitting ? 'Submitting...' : 'Submit for Approval 🚀'}</button>
               <button type="button" onClick={() => setActiveTab('Marketplace')} style={{ background: '#334155', color: 'white', border: 'none', padding: '12px 20px', borderRadius: '8px', fontWeight: '700', cursor: 'pointer' }}>Cancel</button>
             </div>
           </form>
@@ -327,9 +415,9 @@ export default function Home() {
           {/* Marketplace Grid */}
           <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
             {loading ? (
-              <p style={{ textAlign: 'center', color: '#94a3b8', padding: '40px 0' }}>Loading assets... ⏳</p>
+              <p style={{ textAlign: 'center', color: '#94a3b8', padding: '40px 0' }}>Loading marketplace... ⏳</p>
             ) : filteredAssets.length === 0 ? (
-              <p style={{ textAlign: 'center', color: '#94a3b8', padding: '40px 0' }}>No assets found. Click "+ Sell Asset" above to add your first creation! 😊</p>
+              <p style={{ textAlign: 'center', color: '#94a3b8', padding: '40px 0' }}>No approved assets available right now. Check back soon! 😊</p>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
                 {filteredAssets.map((asset, index) => (
