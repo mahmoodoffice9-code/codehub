@@ -1,40 +1,42 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  'https://qekcqdbakwjhixmtovxg.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFla2NxZGJha3dqaGl4bXRvdnhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMzIxNjIsImV4cCI6MjEwMDkwODE2Mn0.h_A9NHj79ROnuA5Dw_7DFs9lPxTnp0KBkEI90Pi3Mdo'
-);
 
 export async function POST(request) {
   try {
-    const paymentData = await request.json();
+    const { title, price, userEmail } = await request.json();
 
-    // NOWPayments status check karega ke payment complete hui ya nahi ('finished' ya 'confirmed')
-    if (paymentData.payment_status === 'finished' || paymentData.payment_status === 'confirmed') {
-      const orderId = paymentData.order_id;
-      const userEmail = paymentData.order_description;
-      const pricePaid = `${paymentData.price_amount} ${paymentData.pay_currency.toUpperCase()}`;
+    const numericPrice = parseFloat(price.replace('$', '')) || 10;
+    const apiKey = 'E45S8MH-KQEM55M-GMSZ6VN-K5WV1MD'; 
 
-      // Supabase ke 'purchases' table mein order save kar rahe hain
-      const { error } = await supabase.from('purchases').insert([
-        {
-          title: orderId,
-          category: 'Crypto Payment',
-          price: pricePaid,
-          link: '#', // Yahan item ka secure download link bhi de sakte ho
-          purchased_at: new Date().toLocaleString()
-        }
-      ]);
+    const payload = {
+      price_amount: numericPrice,
+      price_currency: 'usd',
+      pay_currency: 'usdttrc20',
+      order_id: 'ORDER_' + Date.now(),
+      order_description: `Purchase of ${title}`,
+      ipn_callback_url: 'https://turadomain.com/api/nowpayments-webhook',
+    };
 
-      if (error) {
-        console.error('Database insert error:', error.message);
-      }
+    const response = await fetch('https://api.nowpayments.io/v1/invoice', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+    
+    // Yahan hum exact NOWPayments ka response print kar rahe hain
+    console.log("NOWPayments Response:", data);
+
+    if (!response.ok) {
+      return NextResponse.json({ error: data.message || JSON.stringify(data) }, { status: 400 });
     }
 
-    return NextResponse.json({ status: 'success' });
+    return NextResponse.json({ invoice_url: data.invoice_url });
   } catch (err) {
-    console.error('Webhook error:', err);
+    console.error('Payment API Error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
