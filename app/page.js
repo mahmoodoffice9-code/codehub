@@ -261,7 +261,7 @@ export default function Home() {
           <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
             {loading ? (
               <p style={{ textAlign: 'center', color: '#94a3b8', padding: '40px 0' }}>Loading assets... ⏳</p>
-            ch) : filteredAssets.length === 0 ? (
+            ) : filteredAssets.length === 0 ? (
               <p style={{ textAlign: 'center', color: '#94a3b8', padding: '40px 0' }}>No assets found. Click "+ Sell Asset" above to add your first creation! 😊</p>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
