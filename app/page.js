@@ -133,12 +133,12 @@ export default function Home() {
     }
   }
 
-  // DIRECT FRONTEND SAFE BUY HANDLER (Bina API error ke seedha open hoga)
+  // CORRECTED NOWPAYMENTS DIRECT URL WITH PROPER PARAMS
   async function handleBuyNow(asset) {
     setBuyingId(asset.id)
     try {
       const numericPrice = parseFloat((asset.price || '10').replace('$', '')) || 10
-      const directUrl = `https://nowpayments.io/payment/?iid=3829012831&amount=${numericPrice}&currency=usd`
+      const directUrl = `https://nowpayments.io/payment/?price_amount=${numericPrice}&price_currency=usd&pay_currency=usdttrc20`
       
       window.open(directUrl, '_blank')
       setSelectedAssetModal(null)
