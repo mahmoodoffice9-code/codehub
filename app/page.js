@@ -10,7 +10,8 @@ const supabase = createClient(
 export default function Home() {
   const [assets, setAssets] = useState([])
   const [loading, setLoading] = useState(true)
-  
+  const [showForm, setShowForm] = useState(false)
+
   // Form states
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState('n8n')
@@ -55,7 +56,8 @@ export default function Home() {
       setDescription('')
       setPrice('')
       setLink('')
-      fetchAssets() // Refresh list
+      setShowForm(false) // Form band ho jaye ga upload ke baad
+      fetchAssets() // List refresh ho gi
     } catch (error) {
       alert('Error uploading asset: ' + error.message)
     } finally {
@@ -64,100 +66,113 @@ export default function Home() {
   }
 
   return (
-    <main style={{ padding: '40px 20px', fontFamily: 'sans-serif', backgroundColor: '#0f172a', color: '#f8fafc', minHeight: '100vh', maxWidth: '1000px', margin: '0 auto' }}>
+    <main style={{ padding: '40px 20px', fontFamily: 'sans-serif', backgroundColor: '#0f172a', color: '#f8fafc', minHeight: '100vh', maxWidth: '1100px', margin: '0 auto' }}>
+      
+      {/* Navbar */}
       <nav style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '40px', alignItems: 'center' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: 'bold' }}>⚡ CodeHub</h1>
-        <span style={{ fontSize: '14px', color: '#94a3b8' }}>AI Asset Marketplace</span>
+        <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#38bdf8' }}>⚡ CodeHub</h1>
+        <button 
+          onClick={() => setShowForm(!showForm)} 
+          style={{ background: showForm ? '#ef4444' : '#3b82f6', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
+        >
+          {showForm ? '❌ Close Form' : '➕ Upload Asset'}
+        </button>
       </nav>
 
-      <section style={{ textAlign: 'center', marginBottom: '50px' }}>
-        <h2 style={{ fontSize: '36px', marginBottom: '10px' }}>Buy & Sell Ready-Made AI Assets</h2>
-        <p style={{ color: '#94a3b8' }}>Get high-quality n8n workflows, Make scenarios, and Python bots instantly.</p>
-      </section>
+      {/* Hero Section */}
+      {!showForm && (
+        <section style={{ textAlign: 'center', marginBottom: '40px' }}>
+          <h2 style={{ fontSize: '36px', marginBottom: '10px' }}>AI Asset Marketplace</h2>
+          <p style={{ color: '#94a3b8' }}>Discover high-quality n8n workflows, Make scenarios, and Python bots instantly.</p>
+        </section>
+      )}
 
-      {/* Seller Upload Form */}
-      <div style={{ background: '#1e293b', padding: '30px', borderRadius: '12px', border: '1px solid #334155', marginBottom: '50px' }}>
-        <h3 style={{ marginBottom: '20px', fontSize: '20px', color: '#38bdf8' }}>📤 Upload Your AI Asset</h3>
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-          <div>
-            <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', color: '#cbd5e1' }}>Asset Title</label>
-            <input 
-              type="text" 
-              value={title} 
-              onChange={(e) => setTitle(e.target.value)} 
-              placeholder="e.g., Advanced Lead Scraper Bot" 
-              style={{ width: '100%', padding: '10px', borderRadius: '6px', background: '#0f172a', border: '1px solid #475569', color: 'white' }}
-              required 
-            />
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+      {/* Seller Upload Form (Collapsible) */}
+      {showForm && (
+        <div style={{ background: '#1e293b', padding: '30px', borderRadius: '12px', border: '1px solid #334155', marginBottom: '40px' }}>
+          <h3 style={{ marginBottom: '20px', fontSize: '20px', color: '#38bdf8' }}>📤 Upload Your AI Asset</h3>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
             <div>
-              <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', color: '#cbd5e1' }}>Category</label>
-              <select 
-                value={category} 
-                onChange={(e) => setCategory(e.target.value)} 
-                style={{ width: '100%', padding: '10px', borderRadius: '6px', background: '#0f172a', border: '1px solid #475569', color: 'white' }}
-              >
-                <option value="n8n">n8n Workflow</option>
-                <option value="Make">Make Scenario</option>
-                <option value="Python Bot">Python Bot</option>
-                <option value="Prompt Template">Prompt Template</option>
-              </select>
-            </div>
-
-            <div>
-              <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', color: '#cbd5e1' }}>Price (USD)</label>
+              <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', color: '#cbd5e1' }}>Asset Title</label>
               <input 
                 type="text" 
-                value={price} 
-                onChange={(e) => setPrice(e.target.value)} 
-                placeholder="e.g., 25" 
+                value={title} 
+                onChange={(e) => setTitle(e.target.value)} 
+                placeholder="e.g., Advanced Lead Scraper Bot" 
                 style={{ width: '100%', padding: '10px', borderRadius: '6px', background: '#0f172a', border: '1px solid #475569', color: 'white' }}
                 required 
               />
             </div>
-          </div>
 
-          <div>
-            <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', color: '#cbd5e1' }}>Description</label>
-            <textarea 
-              value={description} 
-              onChange={(e) => setDescription(e.target.value)} 
-              placeholder="Briefly describe what this asset does..." 
-              rows="3"
-              style={{ width: '100%', padding: '10px', borderRadius: '6px', background: '#0f172a', border: '1px solid #475569', color: 'white' }}
-            />
-          </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', color: '#cbd5e1' }}>Category</label>
+                <select 
+                  value={category} 
+                  onChange={(e) => setCategory(e.target.value)} 
+                  style={{ width: '100%', padding: '10px', borderRadius: '6px', background: '#0f172a', border: '1px solid #475569', color: 'white' }}
+                >
+                  <option value="n8n">n8n Workflow</option>
+                  <option value="Make">Make Scenario</option>
+                  <option value="Python Bot">Python Bot</option>
+                  <option value="Prompt Template">Prompt Template</option>
+                </select>
+              </div>
 
-          <div>
-            <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', color: '#cbd5e1' }}>Asset Link / Download Link</label>
-            <input 
-              type="text" 
-              value={link} 
-              onChange={(e) => setLink(e.target.value)} 
-              placeholder="https://drive.google.com/... or GitHub link" 
-              style={{ width: '100%', padding: '10px', borderRadius: '6px', background: '#0f172a', border: '1px solid #475569', color: 'white' }}
-              required 
-            />
-          </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', color: '#cbd5e1' }}>Price (USD)</label>
+                <input 
+                  type="text" 
+                  value={price} 
+                  onChange={(e) => setPrice(e.target.value)} 
+                  placeholder="e.g., 25" 
+                  style={{ width: '100%', padding: '10px', borderRadius: '6px', background: '#0f172a', border: '1px solid #475569', color: 'white' }}
+                  required 
+                />
+              </div>
+            </div>
 
-          <button 
-            type="submit" 
-            disabled={submitting}
-            style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', marginTop: '10px' }}
-          >
-            {submitting ? 'Publishing...' : 'Publish Asset 🚀'}
-          </button>
-        </form>
-      </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', color: '#cbd5e1' }}>Description</label>
+              <textarea 
+                value={description} 
+                onChange={(e) => setDescription(e.target.value)} 
+                placeholder="Briefly describe what this asset does..." 
+                rows="3"
+                style={{ width: '100%', padding: '10px', borderRadius: '6px', background: '#0f172a', border: '1px solid #475569', color: 'white' }}
+              />
+            </div>
 
-      {/* Assets Listing Section */}
-      <h3 style={{ marginBottom: '20px', fontSize: '22px' }}>🛍️ Available Assets</h3>
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', color: '#cbd5e1' }}>Asset Link / Download Link</label>
+              <input 
+                type="text" 
+                value={link} 
+                onChange={(e) => setLink(e.target.value)} 
+                placeholder="https://drive.google.com/... or GitHub link" 
+                style={{ width: '100%', padding: '10px', borderRadius: '6px', background: '#0f172a', border: '1px solid #475569', color: 'white' }}
+                required 
+              />
+            </div>
+
+            <button 
+              type="submit" 
+              disabled={submitting}
+              style={{ background: '#22c55e', color: 'white', border: 'none', padding: '12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', marginTop: '10px' }}
+            >
+              {submitting ? 'Publishing...' : 'Publish to Marketplace 🚀'}
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* Marketplace Assets Listing */}
+      <h3 style={{ marginBottom: '20px', fontSize: '22px', borderBottom: '1px solid #334155', paddingBottom: '10px' }}>🛍️ Live Marketplace</h3>
+      
       {loading ? (
-        <p style={{ textAlign: 'center', color: '#94a3b8' }}>Loading assets... ⏳</p>
+        <p style={{ textAlign: 'center', color: '#94a3b8' }}>Loading marketplace assets... ⏳</p>
       ) : assets.length === 0 ? (
-        <p style={{ textAlign: 'center', color: '#94a3b8' }}>No assets found. Be the first one to upload! 😊</p>
+        <p style={{ textAlign: 'center', color: '#94a3b8' }}>No assets found in marketplace. Click "Upload Asset" above to add your first workflow or bot! 😊</p>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
           {assets.map((asset, index) => (
