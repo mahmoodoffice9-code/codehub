@@ -9,6 +9,7 @@ const supabase = createClient(
 
 export default function Home() {
   const [assets, setAssets] = useState([])
+  const [purchases, setPurchases] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('Marketplace')
   const [selectedCategory, setSelectedCategory] = useState('All')
@@ -26,6 +27,7 @@ export default function Home() {
   useEffect(() => {
     checkUser()
     fetchAssets()
+    fetchPurchases()
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
     })
@@ -46,6 +48,20 @@ export default function Home() {
       console.error('Error fetching assets:', error.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function fetchPurchases() {
+    try {
+      const { data, error } = await supabase.from('purchases').select('*')
+      if (error) {
+        // If table doesn't exist yet, just keep empty
+        setPurchases([])
+      } else {
+        setPurchases(data || [])
+      }
+    } catch (err) {
+      setPurchases([])
     }
   }
 
@@ -77,10 +93,29 @@ export default function Home() {
     }
   }
 
-  // Check if current logged-in user is admin
+  async function recordPurchase(asset) {
+    const purchaseData = {
+      title: asset.title,
+      price: asset.price,
+      link: asset.link,
+      category: asset.category,
+      user_email: user ? user.email : 'guest',
+      purchased_at: new Date().toLocaleString()
+    }
+
+    // Try inserting into purchases table if it exists, otherwise just log locally
+    try {
+      await supabase.from('purchases').insert([purchaseData])
+      fetchPurchases()
+    } catch (e) {
+      console.log('Purchase recorded locally')
+    }
+
+    alert(`Purchase Successful! 🎉\n\nYou can access your asset here:\n${asset.link}`)
+  }
+
   const isAdmin = user && user.email === 'mahmoodoffice9@gmail.com'
 
-  // Filter approved assets for Marketplace
   const approvedAssets = assets.filter(asset => asset.status === 'approved')
   const filteredAssets = approvedAssets.filter(asset => {
     const matchesSearch = asset.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -89,11 +124,9 @@ export default function Home() {
     return matchesSearch && matchesCat
   })
 
-  // Seller store items (all items created)
   const myStoreAssets = assets
-
-  // Admin stats calculations
   const pendingAssets = assets.filter(asset => asset.status === 'pending')
+  
   const totalRevenue = assets.reduce((acc, item) => {
     if (item.status === 'approved') {
       const num = parseFloat((item.price || '0').replace('$', '')) || 0
@@ -115,9 +148,9 @@ export default function Home() {
           <h1 style={{ fontSize: '20px', fontWeight: '800', background: 'linear-gradient(to right, #38bdf8, #818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>CodeHub AI</h1>
         </div>
 
-        {/* Navigation Tabs (Admin Panel shown only if logged in as admin) */}
+        {/* Navigation Tabs (My Assets removed) */}
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-          {['Marketplace', 'Your Store', 'Buying Details', 'My Assets', '+ Sell Asset', 'Support', ...(isAdmin ? ['Admin Panel'] : [])].map((tab) => {
+          {['Marketplace', 'Your Store', 'Buying Details', '+ Sell Asset', 'Support', ...(isAdmin ? ['Admin Panel'] : [])].map((tab) => {
             const isActive = activeTab === tab
             const isSell = tab === '+ Sell Asset'
             return (
@@ -182,15 +215,53 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ADMIN PANEL VIEW (Secured) */}
-      {activeTab === 'Admin Panel' && isAdmin ? (
+      {/* BUYING DETAILS VIEW */}
+      {activeTab === 'Buying Details' ? (
+        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+          <div style={{ background: '#0c1322', border: '1px solid #1e293b', borderRadius: '16px', padding: '28px', marginBottom: '30px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.5)' }}>
+            <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '8px', color: '#38bdf8' }}>🧾 Your Buying & Order History</h2>
+            <p style={{ color: '#94a3b8', fontSize: '14px', margin: 0 }}>Review all workflows and assets you have purchased, complete with timestamps, prices, and direct access links.</p>
+          </div>
+
+          {purchases.length === 0 ? (
+            <div style={{ background: '#0c1322', border: '1px solid #1e293b', borderRadius: '16px', padding: '50px', textAlign: 'center' }}>
+              <p style={{ color: '#94a3b8', fontSize: '15px', marginBottom: '20px' }}>You haven't purchased any items yet. Explore the marketplace to get started! 🛍️</p>
+              <button onClick={() => setActiveTab('Marketplace')} style={{ background: '#7c3aed', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: '700', cursor: 'pointer' }}>Browse Marketplace ⚡</button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {purchases.map((item, index) => (
+                <div key={index} style={{ background: '#0c1322', border: '1px solid #1e293b', borderRadius: '14px', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>
+                  <div>
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '6px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: '700', background: '#172033', color: '#38bdf8', padding: '4px 10px', borderRadius: '20px' }}>{item.category || 'Workflow'}</span>
+                      <span style={{ fontSize: '12px', color: '#94a3b8' }}>🕒 {item.purchased_at || 'Recently'}</span>
+                    </div>
+                    <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#f8fafc', margin: '0 0 4px 0' }}>{item.title}</h3>
+                    <p style={{ color: '#34d399', fontWeight: '800', fontSize: '16px', margin: 0 }}>{item.price}</p>
+                  </div>
+                  <div>
+                    <a 
+                      href={item.link} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      style={{ background: '#10b981', color: 'white', textDecoration: 'none', padding: '10px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: '700', display: 'inline-block', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)' }}
+                    >
+                      Access Asset 🔗
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : activeTab === 'Admin Panel' && isAdmin ? (
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{ background: '#0c1322', border: '1px solid #1e293b', borderRadius: '16px', padding: '28px', marginBottom: '30px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.5)' }}>
             <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '8px', color: '#f59e0b' }}>🛡️ Admin Management & Analytics Panel</h2>
             <p style={{ color: '#94a3b8', fontSize: '14px', margin: 0 }}>Review pending submissions, approve assets for marketplace, and monitor overall revenue and financial metrics.</p>
           </div>
 
-          {/* Metrics Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '40px' }}>
             <div style={{ background: '#0c1322', border: '1px solid #1e293b', borderRadius: '14px', padding: '20px' }}>
               <p style={{ color: '#94a3b8', fontSize: '12px', margin: '0 0 6px 0' }}>📅 Today's Sales</p>
@@ -210,7 +281,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Pending Approvals Section */}
           <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '16px', color: '#f8fafc' }}>⏳ Pending Asset Approvals ({pendingAssets.length})</h3>
           {pendingAssets.length === 0 ? (
             <div style={{ background: '#0c1322', border: '1px solid #1e293b', borderRadius: '14px', padding: '30px', textAlign: 'center', marginBottom: '40px' }}>
@@ -443,14 +513,12 @@ export default function Home() {
                       >
                         👁️ View Details
                       </button>
-                      <a 
-                        href={asset.link} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', textDecoration: 'none', padding: '10px', borderRadius: '8px', fontSize: '13px', fontWeight: '800', textAlign: 'center', boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)' }}
+                      <button 
+                        onClick={() => recordPurchase(asset)}
+                        style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', border: 'none', padding: '10px', borderRadius: '8px', fontSize: '13px', fontWeight: '800', cursor: 'pointer', textAlign: 'center', boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)' }}
                       >
                         Buy ({asset.price})
-                      </a>
+                      </button>
                     </div>
                   </div>
                 ))}
