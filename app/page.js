@@ -18,6 +18,7 @@ export default function Home() {
 
   // Modal / Detail view state
   const [selectedAssetModal, setSelectedAssetModal] = useState(null)
+  const [buyingId, setBuyingId] = useState(null)
 
   // Form states for Sell Asset
   const [title, setTitle] = useState('')
@@ -132,25 +133,36 @@ export default function Home() {
     }
   }
 
-  async function recordPurchase(asset) {
-    const purchaseData = {
-      title: asset.title,
-      price: asset.price,
-      link: asset.link,
-      category: asset.category,
-      user_email: user ? user.email : 'guest',
-      purchased_at: new Date().toLocaleString()
-    }
-
+  // NOWPAYMENTS INTEGRATED BUY HANDLER
+  async function handleBuyNow(asset) {
+    setBuyingId(asset.id)
     try {
-      await supabase.from('purchases').insert([purchaseData])
-      fetchPurchases()
-    } catch (e) {
-      console.log('Purchase recorded locally')
-    }
+      const response = await fetch('/api/create-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: asset.title,
+          price: asset.price,
+          userEmail: user ? user.email : 'guest',
+        }),
+      })
 
-    alert(`Purchase Successful! 🎉\n\nYou can access your asset here:\n${asset.link}`)
-    setSelectedAssetModal(null)
+      const data = await response.json()
+
+      if (data.invoice_url) {
+        window.open(data.invoice_url, '_blank')
+        setSelectedAssetModal(null)
+      } else {
+        alert('Payment link create nahi ho saka: ' + (data.error || 'Unknown error'))
+      }
+    } catch (err) {
+      console.error(err)
+      alert('Kuch masla ho gaya, dobara try kar.')
+    } finally {
+      setBuyingId(null)
+    }
   }
 
   const isAdmin = user && user.email === 'mahmoodoffice9@gmail.com'
@@ -214,10 +226,11 @@ export default function Home() {
                 )}
                 {selectedAssetModal.status === 'approved' && (
                   <button 
-                    onClick={() => recordPurchase(selectedAssetModal)}
+                    onClick={() => handleBuyNow(selectedAssetModal)}
+                    disabled={buyingId === selectedAssetModal.id}
                     style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', border: 'none', padding: '10px 24px', borderRadius: '8px', fontSize: '14px', fontWeight: '800', cursor: 'pointer', boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)' }}
                   >
-                    Buy Now ({selectedAssetModal.price}) 🛍️
+                    {buyingId === selectedAssetModal.id ? 'Processing...' : `Buy with USDT (${selectedAssetModal.price}) 🚀`}
                   </button>
                 )}
               </div>
@@ -633,7 +646,7 @@ export default function Home() {
           {/* Network Badge */}
           <div style={{ textAlign: 'center', marginBottom: '20px' }}>
             <span style={{ background: '#111827', border: '1px solid #1f2937', padding: '6px 16px', borderRadius: '20px', fontSize: '12px', color: '#fbbf24', fontWeight: '600' }}>
-              ⚡ Instant Crypto Checkout • Verified BEP-20 Network
+              ⚡ Instant Crypto Checkout • NOWPayments USDT
             </span>
           </div>
 
@@ -718,10 +731,11 @@ export default function Home() {
                         👁️ View Details
                       </button>
                       <button 
-                        onClick={() => recordPurchase(asset)}
+                        onClick={() => handleBuyNow(asset)}
+                        disabled={buyingId === asset.id}
                         style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', border: 'none', padding: '10px', borderRadius: '8px', fontSize: '13px', fontWeight: '800', cursor: 'pointer', textAlign: 'center', boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)' }}
                       >
-                        Buy ({asset.price})
+                        {buyingId === asset.id ? 'Loading...' : `Buy (${asset.price})`}
                       </button>
                     </div>
                   </div>
