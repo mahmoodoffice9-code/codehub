@@ -86,15 +86,18 @@ export default function Home() {
     return matchesSearch && matchesCat
   })
 
-  // Seller store items (all items created)
+  // Seller store items
   const myStoreAssets = assets
+
+  // Check if logged-in user is the specific admin
+  const isAdmin = user && user.email === 'mahmoodrfaiq9@gmail.com'
 
   // Admin stats calculations
   const pendingAssets = assets.filter(asset => asset.status === 'pending')
   const totalRevenue = assets.reduce((acc, item) => {
     if (item.status === 'approved') {
       const num = parseFloat((item.price || '0').replace('$', '')) || 0
-      return acc + (num * 3) // Simulated orders count multiplier
+      return acc + (num * 3)
     }
     return acc
   }, 0)
@@ -114,7 +117,7 @@ export default function Home() {
 
         {/* Navigation Tabs */}
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-          {['Marketplace', 'Your Store', 'Buying Details', 'My Assets', '+ Sell Asset', 'Support', 'Admin Panel'].map((tab) => {
+          {['Marketplace', 'Your Store', 'Buying Details', 'My Assets', '+ Sell Asset', 'Support', ...(isAdmin ? ['Admin Panel'] : [])].map((tab) => {
             const isActive = activeTab === tab
             const isSell = tab === '+ Sell Asset'
             return (
@@ -150,7 +153,7 @@ export default function Home() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           {user ? (
             <button 
-              onClick={async () => { await supabase.auth.signOut(); setUser(null); }}
+              onClick={async () => { await supabase.auth.signOut(); setUser(null); setActiveTab('Marketplace'); }}
               style={{ background: '#ef4444', color: 'white', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}
             >
               Logout ({user.email.split('@')[0]})
@@ -179,8 +182,8 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ADMIN PANEL VIEW */}
-      {activeTab === 'Admin Panel' ? (
+      {/* ADMIN PANEL VIEW (Restricted to specific admin) */}
+      {activeTab === 'Admin Panel' && isAdmin ? (
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{ background: '#0c1322', border: '1px solid #1e293b', borderRadius: '16px', padding: '28px', marginBottom: '30px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.5)' }}>
             <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '8px', color: '#f59e0b' }}>🛡️ Admin Management & Analytics Panel</h2>
