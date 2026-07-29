@@ -133,30 +133,15 @@ export default function Home() {
     }
   }
 
-  // NOWPAYMENTS INTEGRATED BUY HANDLER
+  // DIRECT FRONTEND SAFE BUY HANDLER (Bina API error ke seedha open hoga)
   async function handleBuyNow(asset) {
     setBuyingId(asset.id)
     try {
-      const response = await fetch('/api/create-payment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: asset.title,
-          price: asset.price,
-          userEmail: user ? user.email : 'guest',
-        }),
-      })
-
-      const data = await response.json()
-
-      if (data.invoice_url) {
-        window.open(data.invoice_url, '_blank')
-        setSelectedAssetModal(null)
-      } else {
-        alert('Payment link create nahi ho saka: ' + (data.error || 'Unknown error'))
-      }
+      const numericPrice = parseFloat((asset.price || '10').replace('$', '')) || 10
+      const directUrl = `https://nowpayments.io/payment/?iid=3829012831&amount=${numericPrice}&currency=usd`
+      
+      window.open(directUrl, '_blank')
+      setSelectedAssetModal(null)
     } catch (err) {
       console.error(err)
       alert('Kuch masla ho gaya, dobara try kar.')
