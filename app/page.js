@@ -55,7 +55,6 @@ export default function Home() {
     try {
       const { data, error } = await supabase.from('purchases').select('*')
       if (error) {
-        // If table doesn't exist yet, just keep empty
         setPurchases([])
       } else {
         setPurchases(data || [])
@@ -103,7 +102,6 @@ export default function Home() {
       purchased_at: new Date().toLocaleString()
     }
 
-    // Try inserting into purchases table if it exists, otherwise just log locally
     try {
       await supabase.from('purchases').insert([purchaseData])
       fetchPurchases()
@@ -148,7 +146,7 @@ export default function Home() {
           <h1 style={{ fontSize: '20px', fontWeight: '800', background: 'linear-gradient(to right, #38bdf8, #818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>CodeHub AI</h1>
         </div>
 
-        {/* Navigation Tabs (My Assets removed) */}
+        {/* Navigation Tabs */}
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
           {['Marketplace', 'Your Store', 'Buying Details', '+ Sell Asset', 'Support', ...(isAdmin ? ['Admin Panel'] : [])].map((tab) => {
             const isActive = activeTab === tab
@@ -215,12 +213,12 @@ export default function Home() {
         </div>
       </div>
 
-      {/* BUYING DETAILS VIEW */}
+      {/* BUYING DETAILS VIEW (TABLE FORMAT) */}
       {activeTab === 'Buying Details' ? (
-        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{ background: '#0c1322', border: '1px solid #1e293b', borderRadius: '16px', padding: '28px', marginBottom: '30px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.5)' }}>
             <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '8px', color: '#38bdf8' }}>🧾 Your Buying & Order History</h2>
-            <p style={{ color: '#94a3b8', fontSize: '14px', margin: 0 }}>Review all workflows and assets you have purchased, complete with timestamps, prices, and direct access links.</p>
+            <p style={{ color: '#94a3b8', fontSize: '14px', margin: 0 }}>Review all workflows and assets you have purchased in a clean tabular layout with exact timestamps and access links.</p>
           </div>
 
           {purchases.length === 0 ? (
@@ -229,29 +227,42 @@ export default function Home() {
               <button onClick={() => setActiveTab('Marketplace')} style={{ background: '#7c3aed', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: '700', cursor: 'pointer' }}>Browse Marketplace ⚡</button>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {purchases.map((item, index) => (
-                <div key={index} style={{ background: '#0c1322', border: '1px solid #1e293b', borderRadius: '14px', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>
-                  <div>
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '6px' }}>
-                      <span style={{ fontSize: '11px', fontWeight: '700', background: '#172033', color: '#38bdf8', padding: '4px 10px', borderRadius: '20px' }}>{item.category || 'Workflow'}</span>
-                      <span style={{ fontSize: '12px', color: '#94a3b8' }}>🕒 {item.purchased_at || 'Recently'}</span>
-                    </div>
-                    <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#f8fafc', margin: '0 0 4px 0' }}>{item.title}</h3>
-                    <p style={{ color: '#34d399', fontWeight: '800', fontSize: '16px', margin: 0 }}>{item.price}</p>
-                  </div>
-                  <div>
-                    <a 
-                      href={item.link} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      style={{ background: '#10b981', color: 'white', textDecoration: 'none', padding: '10px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: '700', display: 'inline-block', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)' }}
-                    >
-                      Access Asset 🔗
-                    </a>
-                  </div>
-                </div>
-              ))}
+            <div style={{ background: '#0c1322', border: '1px solid #1e293b', borderRadius: '16px', overflowX: 'auto', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.5)' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '700px' }}>
+                <thead>
+                  <tr style={{ background: '#111827', borderBottom: '1px solid #1e293b', color: '#94a3b8', fontSize: '13px', textTransform: 'uppercase' }}>
+                    <th style={{ padding: '16px 20px' }}>Asset Title</th>
+                    <th style={{ padding: '16px 20px' }}>Category</th>
+                    <th style={{ padding: '16px 20px' }}>Price</th>
+                    <th style={{ padding: '16px 20px' }}>Purchase Date & Time</th>
+                    <th style={{ padding: '16px 20px', textAlign: 'right' }}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {purchases.map((item, index) => (
+                    <tr key={index} style={{ borderBottom: '1px solid #1e293b', fontSize: '14px' }}>
+                      <td style={{ padding: '16px 20px', fontWeight: '700', color: '#f8fafc' }}>{item.title}</td>
+                      <td style={{ padding: '16px 20px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: '700', background: '#172033', color: '#38bdf8', padding: '4px 10px', borderRadius: '20px' }}>
+                          {item.category || 'Workflow'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '16px 20px', fontWeight: '800', color: '#34d399' }}>{item.price}</td>
+                      <td style={{ padding: '16px 20px', color: '#94a3b8' }}>🕒 {item.purchased_at || 'Recently'}</td>
+                      <td style={{ padding: '16px 20px', textAlign: 'right' }}>
+                        <a 
+                          href={item.link} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          style={{ background: '#10b981', color: 'white', textDecoration: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', display: 'inline-block', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)' }}
+                        >
+                          Access Asset 🔗
+                        </a>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
