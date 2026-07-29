@@ -150,6 +150,7 @@ export default function Home() {
     }
 
     alert(`Purchase Successful! 🎉\n\nYou can access your asset here:\n${asset.link}`)
+    setSelectedAssetModal(null)
   }
 
   const isAdmin = user && user.email === 'mahmoodoffice9@gmail.com'
@@ -178,7 +179,7 @@ export default function Home() {
   return (
     <main style={{ padding: '30px 20px', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', backgroundColor: '#070b14', color: '#f8fafc', minHeight: '100vh', position: 'relative' }}>
       
-      {/* DETAIL VIEW MODAL (Triggered when clicking asset name) */}
+      {/* DETAIL VIEW MODAL WITH BUY BUTTON */}
       {selectedAssetModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
           <div style={{ background: '#0c1322', border: '1px solid #1e293b', borderRadius: '16px', padding: '32px', maxWidth: '600px', width: '100%', boxShadow: '0 20px 40px rgba(0,0,0,0.6)', position: 'relative' }}>
@@ -196,18 +197,30 @@ export default function Home() {
             <div style={{ background: '#070b14', border: '1px solid #1e293b', borderRadius: '10px', padding: '16px', marginBottom: '24px', maxHeight: '200px', overflowY: 'auto' }}>
               <p style={{ color: '#94a3b8', fontSize: '14px', lineHeight: '1.6', margin: 0 }}>{selectedAssetModal.description || 'No description provided for this asset.'}</p>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
               <button 
                 onClick={() => setSelectedAssetModal(null)}
                 style={{ background: '#334155', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: '700', cursor: 'pointer' }}
               >
                 Close
               </button>
-              {isAdmin && (
-                <div style={{ background: '#1e293b', padding: '10px 14px', borderRadius: '8px', fontSize: '12px', color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span>🔗 Admin Link:</span> <a href={selectedAssetModal.link} target="_blank" rel="noopener noreferrer" style={{ color: '#38bdf8' }}>Open Link</a>
-                </div>
-              )}
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                {isAdmin && (
+                  <div style={{ background: '#1e293b', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>🔗 Admin Link:</span> <a href={selectedAssetModal.link} target="_blank" rel="noopener noreferrer" style={{ color: '#38bdf8' }}>Open Link</a>
+                  </div>
+                )}
+                {selectedAssetModal.status === 'approved' && (
+                  <button 
+                    onClick={() => recordPurchase(selectedAssetModal)}
+                    style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', border: 'none', padding: '10px 24px', borderRadius: '8px', fontSize: '14px', fontWeight: '800', cursor: 'pointer', boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)' }}
+                  >
+                    Buy Now ({selectedAssetModal.price}) 🛍️
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -682,7 +695,7 @@ export default function Home() {
                         <span style={{ fontSize: '18px', fontWeight: '900', color: '#34d399' }}>{asset.price}</span>
                       </div>
                       
-                      {/* MARKETPLACE: CLICKING TITLE OPENS FULL INFO MODAL WITHOUT EXPOSING LINK */}
+                      {/* MARKETPLACE: CLICKING TITLE OPENS FULL INFO MODAL */}
                       <h4 
                         onClick={() => setSelectedAssetModal(asset)}
                         style={{ margin: '0 0 10px 0', fontSize: '18px', fontWeight: '800', color: '#f8fafc', cursor: 'pointer', transition: 'color 0.2s' }}
