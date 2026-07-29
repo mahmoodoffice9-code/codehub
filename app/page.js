@@ -10,13 +10,14 @@ const supabase = createClient(
 export default function Home() {
   const [assets, setAssets] = useState([])
   const [purchases, setPurchases] = useState([])
+  const [tickets, setTickets] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('Marketplace')
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [searchQuery, setSearchQuery] = useState('')
   const [user, setUser] = useState(null)
 
-  // Form states
+  // Form states for Sell Asset
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState('n8n Workflow')
   const [description, setDescription] = useState('')
@@ -24,12 +25,21 @@ export default function Home() {
   const [link, setLink] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
+  // Support Form states
+  const [supportEmail, setSupportEmail] = useState('')
+  const [complaint, setComplaint] = useState('')
+  const [supportSubmitting, setSupportSubmitting] = useState(false)
+
   useEffect(() => {
     checkUser()
     fetchAssets()
     fetchPurchases()
+    fetchTickets()
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
+      if (session?.user) {
+        setSupportEmail(session.user.email)
+      }
     })
     return () => subscription.unsubscribe()
   }, [])
@@ -37,6 +47,9 @@ export default function Home() {
   async function checkUser() {
     const { data: { session } } = await supabase.auth.getSession()
     setUser(session?.user ?? null)
+    if (session?.user) {
+      setSupportEmail(session.user.email)
+    }
   }
 
   async function fetchAssets() {
@@ -54,13 +67,18 @@ export default function Home() {
   async function fetchPurchases() {
     try {
       const { data, error } = await supabase.from('purchases').select('*')
-      if (error) {
-        setPurchases([])
-      } else {
-        setPurchases(data || [])
-      }
+      if (!error) setPurchases(data || [])
     } catch (err) {
       setPurchases([])
+    }
+  }
+
+  async function fetchTickets() {
+    try {
+      const { data, error } = await supabase.from('support_tickets').select('*').order('id', { ascending: false })
+      if (!error) setTickets(data || [])
+    } catch (err) {
+      setTickets([])
     }
   }
 
@@ -89,6 +107,29 @@ export default function Home() {
       alert('Error uploading asset: ' + error.message)
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  async function handleSupportSubmit(e) {
+    e.preventDefault()
+    if (!supportEmail || !complaint) {
+      alert('Please fill in your email and complaint!')
+      return
+    }
+
+    setSupportSubmitting(true)
+    try {
+      const { error } = await supabase.from('support_tickets').insert([
+        { email: supportEmail, complaint, status: 'open' }
+      ])
+      if (error) throw error
+      alert('Complaint submitted successfully! Our team will review it soon. 📨')
+      setComplaint('')
+      fetchTickets()
+    } catch (error) {
+      alert('Error submitting complaint: ' + error.message)
+    } finally {
+      setSupportSubmitting(false)
     }
   }
 
@@ -213,8 +254,45 @@ export default function Home() {
         </div>
       </div>
 
-      {/* BUYING DETAILS VIEW (TABLE FORMAT) */}
-      {activeTab === 'Buying Details' ? (
+      {/* SUPPORT VIEW */}
+      {activeTab === 'Support' ? (
+        <div style={{ maxWidth: '700px', margin: '0 auto', background: '#0c1322', border: '1px solid #1e293b', borderRadius: '16px', padding: '32px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.5)' }}>
+          <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '8px', color: '#38bdf8' }}>🛠️ Customer Support & Help Desk</h2>
+          <p style={{ color: '#94a3b8', fontSize: '14px', marginBottom: '24px' }}>Facing any issue with an asset, purchase, or download? Send us your complaint and email, and our admin team will review it instantly.</p>
+          
+          <form onSubmit={handleSupportSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', color: '#94a3b8' }}>Your Email Address</label>
+              <input 
+                type="email" 
+                value={supportEmail} 
+                onChange={(e) => setSupportEmail(e.target.value)} 
+                placeholder="name@example.com" 
+                style={{ width: '100%', padding: '12px', borderRadius: '8px', background: '#070b14', border: '1px solid #334155', color: 'white' }} 
+                required 
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', color: '#94a3b8' }}>Your Complaint / Message</label>
+              <textarea 
+                value={complaint} 
+                onChange={(e) => setComplaint(e.target.value)} 
+                placeholder="Describe your issue in detail..." 
+                rows="5" 
+                style={{ width: '100%', padding: '12px', borderRadius: '8px', background: '#070b14', border: '1px solid #334155', color: 'white' }} 
+                required 
+              />
+            </div>
+            <button 
+              type="submit" 
+              disabled={supportSubmitting} 
+              style={{ background: '#7c3aed', color: 'white', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 12px rgba(124, 58, 237, 0.3)' }}
+            >
+              {supportSubmitting ? 'Submitting...' : 'Submit Complaint 📨'}
+            </button>
+          </form>
+        </div>
+      ) : activeTab === 'Buying Details' ? (
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{ background: '#0c1322', border: '1px solid #1e293b', borderRadius: '16px', padding: '28px', marginBottom: '30px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.5)' }}>
             <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '8px', color: '#38bdf8' }}>🧾 Your Buying & Order History</h2>
@@ -270,7 +348,7 @@ export default function Home() {
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{ background: '#0c1322', border: '1px solid #1e293b', borderRadius: '16px', padding: '28px', marginBottom: '30px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.5)' }}>
             <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '8px', color: '#f59e0b' }}>🛡️ Admin Management & Analytics Panel</h2>
-            <p style={{ color: '#94a3b8', fontSize: '14px', margin: 0 }}>Review pending submissions, approve assets for marketplace, and monitor overall revenue and financial metrics.</p>
+            <p style={{ color: '#94a3b8', fontSize: '14px', margin: 0 }}>Review pending submissions, user support complaints, and monitor overall revenue metrics.</p>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '40px' }}>
@@ -291,6 +369,49 @@ export default function Home() {
               <h3 style={{ fontSize: '24px', fontWeight: '900', color: '#ec4899', margin: 0 }}>$ {totalProfit.toFixed(2)}</h3>
             </div>
           </div>
+
+          {/* SUPPORT TICKETS SECTION IN ADMIN */}
+          <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '16px', color: '#38bdf8' }}>📨 User Support Complaints ({tickets.length})</h3>
+          {tickets.length === 0 ? (
+            <div style={{ background: '#0c1322', border: '1px solid #1e293b', borderRadius: '14px', padding: '30px', textAlign: 'center', marginBottom: '40px' }}>
+              <p style={{ color: '#94a3b8', margin: 0 }}>No support tickets or complaints received yet. 👍</p>
+            </div>
+          ) : (
+            <div style={{ background: '#0c1322', border: '1px solid #1e293b', borderRadius: '16px', overflowX: 'auto', marginBottom: '40px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.5)' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '700px' }}>
+                <thead>
+                  <tr style={{ background: '#111827', borderBottom: '1px solid #1e293b', color: '#94a3b8', fontSize: '13px', textTransform: 'uppercase' }}>
+                    <th style={{ padding: '16px 20px' }}>User Email</th>
+                    <th style={{ padding: '16px 20px' }}>Complaint / Message</th>
+                    <th style={{ padding: '16px 20px' }}>Date</th>
+                    <th style={{ padding: '16px 20px', textAlign: 'right' }}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tickets.map((t, index) => (
+                    <tr key={index} style={{ borderBottom: '1px solid #1e293b', fontSize: '14px' }}>
+                      <td style={{ padding: '16px 20px', fontWeight: '700', color: '#38bdf8' }}>{t.email}</td>
+                      <td style={{ padding: '16px 20px', color: '#f8fafc', maxWidth: '400px' }}>{t.complaint}</td>
+                      <td style={{ padding: '16px 20px', color: '#94a3b8', fontSize: '12px' }}>{new Date(t.created_at).toLocaleString()}</td>
+                      <td style={{ padding: '16px 20px', textAlign: 'right' }}>
+                        <button 
+                          onClick={async () => {
+                            if (confirm('Resolve and delete this ticket?')) {
+                              await supabase.from('support_tickets').delete().eq('id', t.id)
+                              fetchTickets()
+                            }
+                          }}
+                          style={{ background: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}
+                        >
+                          Resolve & Close ✅
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '16px', color: '#f8fafc' }}>⏳ Pending Asset Approvals ({pendingAssets.length})</h3>
           {pendingAssets.length === 0 ? (
@@ -440,12 +561,6 @@ export default function Home() {
               <button type="button" onClick={() => setActiveTab('Marketplace')} style={{ background: '#334155', color: 'white', border: 'none', padding: '12px 20px', borderRadius: '8px', fontWeight: '700', cursor: 'pointer' }}>Cancel</button>
             </div>
           </form>
-        </div>
-      ) : activeTab !== 'Marketplace' ? (
-        <div style={{ textAlign: 'center', padding: '80px 0', color: '#94a3b8' }}>
-          <h2>🚧 {activeTab} Section</h2>
-          <p>This section is ready for your custom data integration!</p>
-          <button onClick={() => setActiveTab('Marketplace')} style={{ marginTop: '20px', background: '#3b82f6', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Back to Marketplace</button>
         </div>
       ) : (
         <>
