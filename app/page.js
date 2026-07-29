@@ -77,6 +77,9 @@ export default function Home() {
     }
   }
 
+  // Check if current logged-in user is admin
+  const isAdmin = user && user.email === 'mahmoodoffice9@gmail.com'
+
   // Filter approved assets for Marketplace
   const approvedAssets = assets.filter(asset => asset.status === 'approved')
   const filteredAssets = approvedAssets.filter(asset => {
@@ -86,11 +89,8 @@ export default function Home() {
     return matchesSearch && matchesCat
   })
 
-  // Seller store items
+  // Seller store items (all items created)
   const myStoreAssets = assets
-
-  // Check if logged-in user is the specific admin
-  const isAdmin = user && user.email === 'mahmoodrfaiq9@gmail.com'
 
   // Admin stats calculations
   const pendingAssets = assets.filter(asset => asset.status === 'pending')
@@ -115,7 +115,7 @@ export default function Home() {
           <h1 style={{ fontSize: '20px', fontWeight: '800', background: 'linear-gradient(to right, #38bdf8, #818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>CodeHub AI</h1>
         </div>
 
-        {/* Navigation Tabs */}
+        {/* Navigation Tabs (Admin Panel shown only if logged in as admin) */}
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
           {['Marketplace', 'Your Store', 'Buying Details', 'My Assets', '+ Sell Asset', 'Support', ...(isAdmin ? ['Admin Panel'] : [])].map((tab) => {
             const isActive = activeTab === tab
@@ -182,7 +182,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ADMIN PANEL VIEW (Restricted to specific admin) */}
+      {/* ADMIN PANEL VIEW (Secured) */}
       {activeTab === 'Admin Panel' && isAdmin ? (
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{ background: '#0c1322', border: '1px solid #1e293b', borderRadius: '16px', padding: '28px', marginBottom: '30px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.5)' }}>
