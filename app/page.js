@@ -10,7 +10,6 @@ const supabase = createClient(
 export default function Home() {
   const [assets, setAssets] = useState([])
   const [purchases, setPurchases] = useState([])
-  const [tickets, setTickets] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('Marketplace')
   const [selectedCategory, setSelectedCategory] = useState('All')
@@ -34,7 +33,6 @@ export default function Home() {
     checkUser()
     fetchAssets()
     fetchPurchases()
-    fetchTickets()
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
       if (session?.user) {
@@ -70,15 +68,6 @@ export default function Home() {
       if (!error) setPurchases(data || [])
     } catch (err) {
       setPurchases([])
-    }
-  }
-
-  async function fetchTickets() {
-    try {
-      const { data, error } = await supabase.from('support_tickets').select('*').order('id', { ascending: false })
-      if (!error) setTickets(data || [])
-    } catch (err) {
-      setTickets([])
     }
   }
 
@@ -119,13 +108,21 @@ export default function Home() {
 
     setSupportSubmitting(true)
     try {
-      const { error } = await supabase.from('support_tickets').insert([
-        { email: supportEmail, complaint, status: 'open' }
+      // Using existing 'assets' table with category 'Support Ticket' to avoid schema errors
+      const { error } = await supabase.from('assets').insert([
+        { 
+          title: `Support from: ${supportEmail}`, 
+          category: 'Support Ticket', 
+          description: complaint, 
+          price: '$0', 
+          link: '#', 
+          status: 'support_open' 
+        }
       ])
       if (error) throw error
       alert('Complaint submitted successfully! Our team will review it soon. 📨')
       setComplaint('')
-      fetchTickets()
+      fetchAssets()
     } catch (error) {
       alert('Error submitting complaint: ' + error.message)
     } finally {
@@ -163,8 +160,9 @@ export default function Home() {
     return matchesSearch && matchesCat
   })
 
-  const myStoreAssets = assets
+  const myStoreAssets = assets.filter(asset => asset.category !== 'Support Ticket')
   const pendingAssets = assets.filter(asset => asset.status === 'pending')
+  const supportTickets = assets.filter(asset => asset.category === 'Support Ticket' && asset.status === 'support_open')
   
   const totalRevenue = assets.reduce((acc, item) => {
     if (item.status === 'approved') {
@@ -371,8 +369,8 @@ export default function Home() {
           </div>
 
           {/* SUPPORT TICKETS SECTION IN ADMIN */}
-          <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '16px', color: '#38bdf8' }}>📨 User Support Complaints ({tickets.length})</h3>
-          {tickets.length === 0 ? (
+          <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '16px', color: '#38bdf8' }}>📨 User Support Complaints ({supportTickets.length})</h3>
+          {supportTickets.length === 0 ? (
             <div style={{ background: '#0c1322', border: '1px solid #1e293b', borderRadius: '14px', padding: '30px', textAlign: 'center', marginBottom: '40px' }}>
               <p style={{ color: '#94a3b8', margin: 0 }}>No support tickets or complaints received yet. 👍</p>
             </div>
@@ -381,24 +379,22 @@ export default function Home() {
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '700px' }}>
                 <thead>
                   <tr style={{ background: '#111827', borderBottom: '1px solid #1e293b', color: '#94a3b8', fontSize: '13px', textTransform: 'uppercase' }}>
-                    <th style={{ padding: '16px 20px' }}>User Email</th>
+                    <th style={{ padding: '16px 20px' }}>User Details</th>
                     <th style={{ padding: '16px 20px' }}>Complaint / Message</th>
-                    <th style={{ padding: '16px 20px' }}>Date</th>
                     <th style={{ padding: '16px 20px', textAlign: 'right' }}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {tickets.map((t, index) => (
+                  {supportTickets.map((t, index) => (
                     <tr key={index} style={{ borderBottom: '1px solid #1e293b', fontSize: '14px' }}>
-                      <td style={{ padding: '16px 20px', fontWeight: '700', color: '#38bdf8' }}>{t.email}</td>
-                      <td style={{ padding: '16px 20px', color: '#f8fafc', maxWidth: '400px' }}>{t.complaint}</td>
-                      <td style={{ padding: '16px 20px', color: '#94a3b8', fontSize: '12px' }}>{new Date(t.created_at).toLocaleString()}</td>
+                      <td style={{ padding: '16px 20px', fontWeight: '700', color: '#38bdf8' }}>{t.title}</td>
+                      <td style={{ padding: '16px 20px', color: '#f8fafc', maxWidth: '400px' }}>{t.description}</td>
                       <td style={{ padding: '16px 20px', textAlign: 'right' }}>
                         <button 
                           onClick={async () => {
                             if (confirm('Resolve and delete this ticket?')) {
-                              await supabase.from('support_tickets').delete().eq('id', t.id)
-                              fetchTickets()
+                              await supabase.from('assets').delete().eq('id', t.id)
+                              fetchAssets()
                             }
                           }}
                           style={{ background: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}
