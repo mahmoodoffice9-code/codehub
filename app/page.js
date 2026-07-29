@@ -16,6 +16,9 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('')
   const [user, setUser] = useState(null)
 
+  // Modal / Detail view state
+  const [selectedAssetModal, setSelectedAssetModal] = useState(null)
+
   // Form states for Sell Asset
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState('n8n Workflow')
@@ -108,7 +111,6 @@ export default function Home() {
 
     setSupportSubmitting(true)
     try {
-      // Using existing 'assets' table with category 'Support Ticket' to avoid schema errors
       const { error } = await supabase.from('assets').insert([
         { 
           title: `Support from: ${supportEmail}`, 
@@ -174,8 +176,43 @@ export default function Home() {
   const totalProfit = totalRevenue * 0.15
 
   return (
-    <main style={{ padding: '30px 20px', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', backgroundColor: '#070b14', color: '#f8fafc', minHeight: '100vh' }}>
+    <main style={{ padding: '30px 20px', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', backgroundColor: '#070b14', color: '#f8fafc', minHeight: '100vh', position: 'relative' }}>
       
+      {/* DETAIL VIEW MODAL (Triggered when clicking asset name) */}
+      {selectedAssetModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
+          <div style={{ background: '#0c1322', border: '1px solid #1e293b', borderRadius: '16px', padding: '32px', maxWidth: '600px', width: '100%', boxShadow: '0 20px 40px rgba(0,0,0,0.6)', position: 'relative' }}>
+            <button 
+              onClick={() => setSelectedAssetModal(null)}
+              style={{ position: 'absolute', top: '20px', right: '20px', background: '#1e293b', color: 'white', border: 'none', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', fontWeight: 'bold' }}
+            >
+              ✕
+            </button>
+            <span style={{ fontSize: '11px', fontWeight: '700', background: '#172033', color: '#38bdf8', padding: '6px 12px', borderRadius: '20px', textTransform: 'uppercase', display: 'inline-block', marginBottom: '16px' }}>
+              ⚡ {selectedAssetModal.category}
+            </span>
+            <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#f8fafc', marginBottom: '12px' }}>{selectedAssetModal.title}</h2>
+            <p style={{ fontSize: '20px', fontWeight: '800', color: '#34d399', marginBottom: '20px' }}>{selectedAssetModal.price}</p>
+            <div style={{ background: '#070b14', border: '1px solid #1e293b', borderRadius: '10px', padding: '16px', marginBottom: '24px', maxHeight: '200px', overflowY: 'auto' }}>
+              <p style={{ color: '#94a3b8', fontSize: '14px', lineHeight: '1.6', margin: 0 }}>{selectedAssetModal.description || 'No description provided for this asset.'}</p>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button 
+                onClick={() => setSelectedAssetModal(null)}
+                style={{ background: '#334155', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: '700', cursor: 'pointer' }}
+              >
+                Close
+              </button>
+              {isAdmin && (
+                <div style={{ background: '#1e293b', padding: '10px 14px', borderRadius: '8px', fontSize: '12px', color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>🔗 Admin Link:</span> <a href={selectedAssetModal.link} target="_blank" rel="noopener noreferrer" style={{ color: '#38bdf8' }}>Open Link</a>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Top Main Navigation Container */}
       <div style={{ background: '#0c1322', border: '1px solid #1e293b', borderRadius: '16px', padding: '20px 24px', maxWidth: '1200px', margin: '0 auto 40px auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.5)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -294,7 +331,7 @@ export default function Home() {
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{ background: '#0c1322', border: '1px solid #1e293b', borderRadius: '16px', padding: '28px', marginBottom: '30px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.5)' }}>
             <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '8px', color: '#38bdf8' }}>🧾 Your Buying & Order History</h2>
-            <p style={{ color: '#94a3b8', fontSize: '14px', margin: 0 }}>Review all workflows and assets you have purchased in a clean tabular layout with exact timestamps and access links.</p>
+            <p style={{ color: '#94a3b8', fontSize: '14px', margin: 0 }}>Review all workflows and assets you have purchased in a clean tabular layout with exact timestamps and secure access links.</p>
           </div>
 
           {purchases.length === 0 ? (
@@ -311,7 +348,7 @@ export default function Home() {
                     <th style={{ padding: '16px 20px' }}>Category</th>
                     <th style={{ padding: '16px 20px' }}>Price</th>
                     <th style={{ padding: '16px 20px' }}>Purchase Date & Time</th>
-                    <th style={{ padding: '16px 20px', textAlign: 'right' }}>Action</th>
+                    <th style={{ padding: '16px 20px', textAlign: 'right' }}>Secure Download Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -346,7 +383,7 @@ export default function Home() {
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{ background: '#0c1322', border: '1px solid #1e293b', borderRadius: '16px', padding: '28px', marginBottom: '30px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.5)' }}>
             <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '8px', color: '#f59e0b' }}>🛡️ Admin Management & Analytics Panel</h2>
-            <p style={{ color: '#94a3b8', fontSize: '14px', margin: 0 }}>Review pending submissions, user support complaints, and monitor overall revenue metrics.</p>
+            <p style={{ color: '#94a3b8', fontSize: '14px', margin: 0 }}>Review pending submissions with full link access, monitor user support complaints, and track overall revenue.</p>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '40px' }}>
@@ -409,7 +446,7 @@ export default function Home() {
             </div>
           )}
 
-          <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '16px', color: '#f8fafc' }}>⏳ Pending Asset Approvals ({pendingAssets.length})</h3>
+          <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '16px', color: '#f8fafc' }}>⏳ Pending Asset Approvals with Full Link Access ({pendingAssets.length})</h3>
           {pendingAssets.length === 0 ? (
             <div style={{ background: '#0c1322', border: '1px solid #1e293b', borderRadius: '14px', padding: '30px', textAlign: 'center', marginBottom: '40px' }}>
               <p style={{ color: '#94a3b8', margin: 0 }}>No pending assets waiting for approval. All clear! 👍</p>
@@ -425,8 +462,21 @@ export default function Home() {
                       </span>
                       <span style={{ fontSize: '18px', fontWeight: '900', color: '#34d399' }}>{asset.price}</span>
                     </div>
-                    <h4 style={{ margin: '0 0 10px 0', fontSize: '18px', fontWeight: '800', color: '#f8fafc' }}>{asset.title}</h4>
-                    <p style={{ color: '#94a3b8', fontSize: '14px', lineHeight: '1.5', margin: '0 0 20px 0' }}>{asset.description || 'No description provided.'}</p>
+                    {/* Clickable title in admin panel */}
+                    <h4 
+                      onClick={() => setSelectedAssetModal(asset)}
+                      style={{ margin: '0 0 10px 0', fontSize: '18px', fontWeight: '800', color: '#38bdf8', cursor: 'pointer', textDecoration: 'underline' }}
+                      title="Click to view full details"
+                    >
+                      {asset.title} 🔍
+                    </h4>
+                    <p style={{ color: '#94a3b8', fontSize: '14px', lineHeight: '1.5', margin: '0 0 10px 0' }}>{asset.description || 'No description provided.'}</p>
+                    
+                    {/* ADMIN HAS FULL ACCESS TO LINK HERE */}
+                    <div style={{ background: '#070b14', padding: '10px', borderRadius: '8px', border: '1px solid #334155', marginBottom: '16px' }}>
+                      <span style={{ fontSize: '11px', color: '#fbbf24', display: 'block', marginBottom: '2px' }}>🔒 Secure Link (Admin View):</span>
+                      <a href={asset.link} target="_blank" rel="noopener noreferrer" style={{ fontSize: '13px', color: '#38bdf8', wordBreak: 'break-all' }}>{asset.link}</a>
+                    </div>
                   </div>
                   <div style={{ borderTop: '1px solid #1e293b', paddingTop: '14px', display: 'flex', gap: '10px' }}>
                     <button 
@@ -499,7 +549,14 @@ export default function Home() {
                         </span>
                         <span style={{ fontSize: '18px', fontWeight: '900', color: '#34d399' }}>{asset.price}</span>
                       </div>
-                      <h4 style={{ margin: '0 0 10px 0', fontSize: '18px', fontWeight: '800', color: '#f8fafc' }}>{asset.title}</h4>
+                      {/* Clickable title in store view */}
+                      <h4 
+                        onClick={() => setSelectedAssetModal(asset)}
+                        style={{ margin: '0 0 10px 0', fontSize: '18px', fontWeight: '800', color: '#38bdf8', cursor: 'pointer', textDecoration: 'underline' }}
+                        title="Click to view full details"
+                      >
+                        {asset.title} 🔍
+                      </h4>
                       <p style={{ color: '#94a3b8', fontSize: '14px', lineHeight: '1.5', margin: '0 0 20px 0' }}>{asset.description || 'No description provided.'}</p>
                     </div>
                     <div style={{ borderTop: '1px solid #1e293b', paddingTop: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -549,7 +606,7 @@ export default function Home() {
               <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What does this workflow do..." rows="3" style={{ width: '100%', padding: '12px', borderRadius: '8px', background: '#070b14', border: '1px solid #334155', color: 'white' }} />
             </div>
             <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', color: '#94a3b8' }}>Download / Access Link</label>
+              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', color: '#94a3b8' }}>Download / Access Link (Hidden from general users until purchased)</label>
               <input type="text" value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://..." style={{ width: '100%', padding: '10px', borderRadius: '8px', background: '#070b14', border: '1px solid #334155', color: 'white' }} required />
             </div>
             <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
@@ -624,13 +681,25 @@ export default function Home() {
                         </span>
                         <span style={{ fontSize: '18px', fontWeight: '900', color: '#34d399' }}>{asset.price}</span>
                       </div>
-                      <h4 style={{ margin: '0 0 10px 0', fontSize: '18px', fontWeight: '800', color: '#f8fafc' }}>{asset.title}</h4>
-                      <p style={{ color: '#94a3b8', fontSize: '14px', lineHeight: '1.5', margin: '0 0 20px 0' }}>{asset.description || 'No description provided.'}</p>
+                      
+                      {/* MARKETPLACE: CLICKING TITLE OPENS FULL INFO MODAL WITHOUT EXPOSING LINK */}
+                      <h4 
+                        onClick={() => setSelectedAssetModal(asset)}
+                        style={{ margin: '0 0 10px 0', fontSize: '18px', fontWeight: '800', color: '#f8fafc', cursor: 'pointer', transition: 'color 0.2s' }}
+                        onMouseOver={(e) => e.target.style.color = '#38bdf8'}
+                        onMouseOut={(e) => e.target.style.color = '#f8fafc'}
+                        title="Click to view full details"
+                      >
+                        {asset.title} 🔍
+                      </h4>
+                      <p style={{ color: '#94a3b8', fontSize: '14px', lineHeight: '1.5', margin: '0 0 20px 0' }}>
+                        {asset.description ? (asset.description.substring(0, 90) + '...') : 'No description provided.'}
+                      </p>
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', borderTop: '1px solid #1e293b', paddingTop: '16px' }}>
                       <button 
-                        onClick={() => alert(`Details: \n\n${asset.title}\n\n${asset.description || 'No description'}\n\nPrice: ${asset.price}`)}
+                        onClick={() => setSelectedAssetModal(asset)}
                         style={{ background: '#172033', color: '#cbd5e1', border: '1px solid #334155', padding: '10px', borderRadius: '8px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}
                       >
                         👁️ View Details
