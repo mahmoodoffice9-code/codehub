@@ -133,12 +133,11 @@ export default function Home() {
     }
   }
 
-  // CORRECTED NOWPAYMENTS DIRECT URL WITH PROPER PARAMS
+  // NOWPAYMENTS DONATION LINK INTEGRATION
   async function handleBuyNow(asset) {
     setBuyingId(asset.id)
     try {
-      const numericPrice = parseFloat((asset.price || '10').replace('$', '')) || 10
-      const directUrl = `https://nowpayments.io/payment/?price_amount=${numericPrice}&price_currency=usd&pay_currency=usdttrc20`
+      const directUrl = 'https://nowpayments.io/donation?api_key=4412c742-cb86-4605-bbe0-a68a7ce530e8'
       
       window.open(directUrl, '_blank')
       setSelectedAssetModal(null)
@@ -215,7 +214,7 @@ export default function Home() {
                     disabled={buyingId === selectedAssetModal.id}
                     style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', border: 'none', padding: '10px 24px', borderRadius: '8px', fontSize: '14px', fontWeight: '800', cursor: 'pointer', boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)' }}
                   >
-                    {buyingId === selectedAssetModal.id ? 'Processing...' : `Buy with USDT (${selectedAssetModal.price}) 🚀`}
+                    {buyingId === selectedAssetModal.id ? 'Processing...' : `Buy with Crypto (${selectedAssetModal.price}) 🚀`}
                   </button>
                 )}
               </div>
@@ -631,7 +630,7 @@ export default function Home() {
           {/* Network Badge */}
           <div style={{ textAlign: 'center', marginBottom: '20px' }}>
             <span style={{ background: '#111827', border: '1px solid #1f2937', padding: '6px 16px', borderRadius: '20px', fontSize: '12px', color: '#fbbf24', fontWeight: '600' }}>
-              ⚡ Instant Crypto Checkout • NOWPayments USDT
+              ⚡ Instant Crypto Checkout • NOWPayments
             </span>
           </div>
 
