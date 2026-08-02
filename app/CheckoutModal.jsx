@@ -13,28 +13,17 @@ export default function CheckoutModal({ asset, onClose }) {
 
     setLoading(true);
     try {
-      // Backend ke create-payment route ko request bhej rahay hain
-      const res = await fetch('/api/create-payment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: asset.title,
-          price: asset.price,
-          userEmail: buyerEmail
-        })
-      });
+      // Price ko clean kar rahay hain (e.g. "$10" se sirf number nikalna)
+      const numericPrice = parseFloat(asset.price.replace('$', '')) || 10;
+      
+      // Email ko order description ya metadata ke tor par NOWPayments link mein bhej rahay hain
+      const directUrl = `https://nowpayments.io/payment/?iid=3829012831&amount=${numericPrice}&currency=usd&order_description=${encodeURIComponent(asset.title + ' - ' + buyerEmail)}`;
 
-      const data = await res.json();
-      if (data.invoice_url) {
-        // User ko NOWPayments gateway par redirect kar rahay hain
-        window.location.href = data.invoice_url;
-      } else {
-        alert('Payment link generate karne mein masla aya!');
-      }
+      // User ko direct payment gateway par redirect kar rahay hain
+      window.location.href = directUrl;
     } catch (err) {
       console.error(err);
       alert('Kuch galat ho gaya!');
-    } finally {
       setLoading(false);
     }
   };
@@ -45,10 +34,9 @@ export default function CheckoutModal({ asset, onClose }) {
       <p style={{ marginBottom: '20px', color: '#94a3b8', fontSize: '14px' }}>Price: {asset.price}</p>
 
       <form onSubmit={handleCheckout}>
-        {/* Step 1: Checkout Email Input Box */}
         <div style={{ marginBottom: '20px' }}>
           <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', color: '#94a3b8', fontWeight: '600' }}>
-            Your Account / Delivery Email *
+            Your Email *
           </label>
           <input 
             type="email" 
@@ -66,7 +54,7 @@ export default function CheckoutModal({ asset, onClose }) {
             disabled={loading} 
             style={{ flex: 1, padding: '12px', borderRadius: '8px', background: '#3b82f6', color: 'white', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}
           >
-            {loading ? 'Processing...' : 'Pay with Crypto 🚀'}
+            {loading ? 'Redirecting...' : 'Pay with Crypto 🚀'}
           </button>
           <button 
             type="button" 
