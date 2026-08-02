@@ -139,13 +139,11 @@ export default function Home() {
     }
   }
 
-  // Trigger Checkout Terms Modal first
   function handleBuyClick(asset) {
-    setSelectedAssetModal(null) // close detail modal if open
+    setSelectedAssetModal(null)
     setCheckoutAsset(asset)
   }
 
-  // Final Redirect to NOWPayments after terms agreement & email entry
   async function handleProceedToPayment() {
     if (!buyerEmail || !buyerEmail.includes('@')) {
       alert('Please enter a valid email address!')
@@ -154,13 +152,12 @@ export default function Home() {
 
     setBuyingId(true)
     try {
-      // You can also save the pending order/email to supabase here if needed
       const directUrl = 'https://nowpayments.io/donation?api_key=4412c742-cb86-4605-bbe0-a68a7ce530e8'
       window.open(directUrl, '_blank')
       setCheckoutAsset(null)
     } catch (err) {
       console.error(err)
-      alert('Kuch masla ho gaya, dobara try kar.')
+      alert('An error occurred, please try again.')
     } finally {
       setBuyingId(false)
     }
@@ -206,12 +203,22 @@ export default function Home() {
             <h2 style={{ fontSize: '22px', fontWeight: '900', color: '#38bdf8', marginBottom: '8px' }}>Secure Crypto Checkout 🛡️</h2>
             <p style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '20px' }}>Review the instructions and terms below before proceeding with your payment for <strong style={{ color: '#fff' }}>{checkoutAsset.title} ({checkoutAsset.price})</strong>.</p>
 
+            {/* Currency & Network Details Box */}
+            <div style={{ background: '#111827', border: '1px solid #38bdf855', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+              <h4 style={{ color: '#38bdf8', margin: '0 0 8px 0', fontSize: '14px', fontWeight: '800' }}>🪙 Payment Currency & Network Info:</h4>
+              <ul style={{ color: '#cbd5e1', fontSize: '13px', paddingLeft: '20px', margin: 0, lineHeight: '1.6' }}>
+                <li>Asset Currency: <strong style={{ color: '#34d399' }}>Tether (USDT)</strong></li>
+                <li>Exchange Rate: <strong style={{ color: '#fff' }}>1 USDT = 1 USD</strong></li>
+                <li>Supported Networks / Chains: <strong style={{ color: '#fbbf24' }}>TRC20, ERC20, or BEP20</strong></li>
+              </ul>
+            </div>
+
             {/* Terms and Conditions Box */}
             <div style={{ background: '#070b14', border: '1px solid #ef444455', borderRadius: '12px', padding: '18px', marginBottom: '20px' }}>
               <h4 style={{ color: '#ef4444', margin: '0 0 10px 0', fontSize: '14px', fontWeight: '800' }}>⚠️ Important Terms & Conditions:</h4>
               <ul style={{ color: '#cbd5e1', fontSize: '13px', paddingLeft: '20px', margin: 0, lineHeight: '1.6' }}>
                 <li>Payment must be sent strictly in <strong style={{ color: '#34d399' }}>USDT</strong>.</li>
-                <li>Ensure you send the exact amount required. <strong style={{ color: '#f87171' }}>Agar payment kam hui, to asset nahi milega aur paise bhi wapas nahi honge!</strong></li>
+                <li>Ensure you send the exact amount required. <strong style={{ color: '#f87171' }}>If the payment amount sent is less than required, the asset will not be delivered and funds will not be refunded!</strong></li>
                 <li>Double check network fees and transaction details before confirming on your wallet.</li>
               </ul>
             </div>
@@ -220,9 +227,9 @@ export default function Home() {
             <div style={{ background: '#111827', border: '1px solid #1e293b', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
               <h4 style={{ color: '#38bdf8', margin: '0 0 8px 0', fontSize: '14px', fontWeight: '700' }}>📋 Purchase Instructions:</h4>
               <ol style={{ color: '#94a3b8', fontSize: '13px', paddingLeft: '20px', margin: 0, lineHeight: '1.6' }}>
-                <li>Apni wo email darj karen jis par aapka account ya record ho.</li>
-                <li>"Proceed to Payment" button par click karen jo aapko NOWPayments par le jayega.</li>
-                <li>Payment mukammal hone ke baad aapko asset ka access mil jayega.</li>
+                <li>Enter the email address associated with your account or record.</li>
+                <li>Click the "Proceed to Payment" button to open the secure NOWPayments gateway.</li>
+                <li>Once payment is successfully completed, you will gain access to your asset.</li>
               </ol>
             </div>
 
