@@ -133,17 +133,33 @@ export default function Home() {
     }
   }
 
-  // NOWPAYMENTS DONATION LINK INTEGRATION
+  // SECURE AUTOMATED API CHECKOUT (NOWPAYMENTS INVOICE API)
   async function handleBuyNow(asset) {
     setBuyingId(asset.id)
     try {
-      const directUrl = 'https://nowpayments.io/donation?api_key=4412c742-cb86-4605-bbe0-a68a7ce530e8'
+      const cleanPrice = (asset.price || '0').replace('$', '')
       
-      window.open(directUrl, '_blank')
-      setSelectedAssetModal(null)
+      const res = await fetch('/api/create-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          price: cleanPrice,
+          itemName: asset.title,
+          itemSku: asset.id,
+        }),
+      })
+
+      const data = await res.json()
+      
+      if (data.invoice_url) {
+        window.location.href = data.invoice_url
+        setSelectedAssetModal(null)
+      } else {
+        alert(data.error || 'Payment generation failed')
+      }
     } catch (err) {
       console.error(err)
-      alert('Kuch masla ho gaya, dobara try kar.')
+      alert('Network error. Please try again.')
     } finally {
       setBuyingId(null)
     }
@@ -630,7 +646,7 @@ export default function Home() {
           {/* Network Badge */}
           <div style={{ textAlign: 'center', marginBottom: '20px' }}>
             <span style={{ background: '#111827', border: '1px solid #1f2937', padding: '6px 16px', borderRadius: '20px', fontSize: '12px', color: '#fbbf24', fontWeight: '600' }}>
-              ⚡ Instant Crypto Checkout • NOWPayments
+              ⚡ Secure Automated Crypto Checkout • NOWPayments
             </span>
           </div>
 
