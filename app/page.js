@@ -133,19 +133,17 @@ export default function Home() {
     }
   }
 
-  // PURANA SIMPLE BUY FUNCTION (WAPAS LAAYA GAYA HAI)
+  // NOWPAYMENTS DONATION LINK INTEGRATION
   async function handleBuyNow(asset) {
     setBuyingId(asset.id)
     try {
-      if (asset.link) {
-        window.open(asset.link, '_blank')
-        setSelectedAssetModal(null)
-      } else {
-        alert('Link not available for this asset.')
-      }
+      const directUrl = 'https://nowpayments.io/donation?api_key=4412c742-cb86-4605-bbe0-a68a7ce530e8'
+      
+      window.open(directUrl, '_blank')
+      setSelectedAssetModal(null)
     } catch (err) {
       console.error(err)
-      alert('Something went wrong.')
+      alert('Kuch masla ho gaya, dobara try kar.')
     } finally {
       setBuyingId(null)
     }
@@ -216,7 +214,7 @@ export default function Home() {
                     disabled={buyingId === selectedAssetModal.id}
                     style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', border: 'none', padding: '10px 24px', borderRadius: '8px', fontSize: '14px', fontWeight: '800', cursor: 'pointer', boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)' }}
                   >
-                    {buyingId === selectedAssetModal.id ? 'Processing...' : `Get Asset (${selectedAssetModal.price}) 🚀`}
+                    {buyingId === selectedAssetModal.id ? 'Processing...' : `Buy with Crypto (${selectedAssetModal.price}) 🚀`}
                   </button>
                 )}
               </div>
@@ -632,7 +630,7 @@ export default function Home() {
           {/* Network Badge */}
           <div style={{ textAlign: 'center', marginBottom: '20px' }}>
             <span style={{ background: '#111827', border: '1px solid #1f2937', padding: '6px 16px', borderRadius: '20px', fontSize: '12px', color: '#fbbf24', fontWeight: '600' }}>
-              ⚡ CodeHub Marketplace • Ready & Clean
+              ⚡ Instant Crypto Checkout • NOWPayments
             </span>
           </div>
 
@@ -721,7 +719,7 @@ export default function Home() {
                         disabled={buyingId === asset.id}
                         style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', border: 'none', padding: '10px', borderRadius: '8px', fontSize: '13px', fontWeight: '800', cursor: 'pointer', textAlign: 'center', boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)' }}
                       >
-                        {buyingId === asset.id ? 'Loading...' : `Get (${asset.price})`}
+                        {buyingId === asset.id ? 'Loading...' : `Buy (${asset.price})`}
                       </button>
                     </div>
                   </div>
