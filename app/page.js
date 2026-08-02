@@ -18,7 +18,11 @@ export default function Home() {
 
   // Modal / Detail view state
   const [selectedAssetModal, setSelectedAssetModal] = useState(null)
-  const [buyingId, setBuyingId] = useState(null)
+  
+  // Checkout / Terms Modal State
+  const [checkoutAsset, setCheckoutAsset] = useState(null)
+  const [buyerEmail, setBuyerEmail] = useState('')
+  const [buyingId, setBuyingId] = useState(false)
 
   // Form states for Sell Asset
   const [title, setTitle] = useState('')
@@ -41,6 +45,7 @@ export default function Home() {
       setUser(session?.user ?? null)
       if (session?.user) {
         setSupportEmail(session.user.email)
+        setBuyerEmail(session.user.email)
       }
     })
     return () => subscription.unsubscribe()
@@ -51,6 +56,7 @@ export default function Home() {
     setUser(session?.user ?? null)
     if (session?.user) {
       setSupportEmail(session.user.email)
+      setBuyerEmail(session.user.email)
     }
   }
 
@@ -133,19 +139,30 @@ export default function Home() {
     }
   }
 
-  // NOWPAYMENTS DONATION LINK INTEGRATION
-  async function handleBuyNow(asset) {
-    setBuyingId(asset.id)
+  // Trigger Checkout Terms Modal first
+  function handleBuyClick(asset) {
+    setSelectedAssetModal(null) // close detail modal if open
+    setCheckoutAsset(asset)
+  }
+
+  // Final Redirect to NOWPayments after terms agreement & email entry
+  async function handleProceedToPayment() {
+    if (!buyerEmail || !buyerEmail.includes('@')) {
+      alert('Please enter a valid email address!')
+      return
+    }
+
+    setBuyingId(true)
     try {
+      // You can also save the pending order/email to supabase here if needed
       const directUrl = 'https://nowpayments.io/donation?api_key=4412c742-cb86-4605-bbe0-a68a7ce530e8'
-      
       window.open(directUrl, '_blank')
-      setSelectedAssetModal(null)
+      setCheckoutAsset(null)
     } catch (err) {
       console.error(err)
       alert('Kuch masla ho gaya, dobara try kar.')
     } finally {
-      setBuyingId(null)
+      setBuyingId(false)
     }
   }
 
@@ -175,6 +192,72 @@ export default function Home() {
   return (
     <main style={{ padding: '30px 20px', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', backgroundColor: '#070b14', color: '#f8fafc', minHeight: '100vh', position: 'relative' }}>
       
+      {/* CHECKOUT TERMS & INSTRUCTIONS MODAL */}
+      {checkoutAsset && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1100, padding: '20px' }}>
+          <div style={{ background: '#0c1322', border: '1px solid #1e293b', borderRadius: '16px', padding: '32px', maxWidth: '650px', width: '100%', boxShadow: '0 25px 50px rgba(0,0,0,0.7)', position: 'relative', maxHeight: '90vh', overflowY: 'auto' }}>
+            <button 
+              onClick={() => setCheckoutAsset(null)}
+              style={{ position: 'absolute', top: '20px', right: '20px', background: '#1e293b', color: 'white', border: 'none', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', fontWeight: 'bold' }}
+            >
+              ✕
+            </button>
+
+            <h2 style={{ fontSize: '22px', fontWeight: '900', color: '#38bdf8', marginBottom: '8px' }}>Secure Crypto Checkout 🛡️</h2>
+            <p style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '20px' }}>Review the instructions and terms below before proceeding with your payment for <strong style={{ color: '#fff' }}>{checkoutAsset.title} ({checkoutAsset.price})</strong>.</p>
+
+            {/* Terms and Conditions Box */}
+            <div style={{ background: '#070b14', border: '1px solid #ef444455', borderRadius: '12px', padding: '18px', marginBottom: '20px' }}>
+              <h4 style={{ color: '#ef4444', margin: '0 0 10px 0', fontSize: '14px', fontWeight: '800' }}>⚠️ Important Terms & Conditions:</h4>
+              <ul style={{ color: '#cbd5e1', fontSize: '13px', paddingLeft: '20px', margin: 0, lineHeight: '1.6' }}>
+                <li>Payment must be sent strictly in <strong style={{ color: '#34d399' }}>USDT</strong>.</li>
+                <li>Ensure you send the exact amount required. <strong style={{ color: '#f87171' }}>Agar payment kam hui, to asset nahi milega aur paise bhi wapas nahi honge!</strong></li>
+                <li>Double check network fees and transaction details before confirming on your wallet.</li>
+              </ul>
+            </div>
+
+            {/* Step by Step Guide */}
+            <div style={{ background: '#111827', border: '1px solid #1e293b', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
+              <h4 style={{ color: '#38bdf8', margin: '0 0 8px 0', fontSize: '14px', fontWeight: '700' }}>📋 Purchase Instructions:</h4>
+              <ol style={{ color: '#94a3b8', fontSize: '13px', paddingLeft: '20px', margin: 0, lineHeight: '1.6' }}>
+                <li>Apni wo email darj karen jis par aapka account ya record ho.</li>
+                <li>"Proceed to Payment" button par click karen jo aapko NOWPayments par le jayega.</li>
+                <li>Payment mukammal hone ke baad aapko asset ka access mil jayega.</li>
+              </ol>
+            </div>
+
+            {/* Email Input Field */}
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', color: '#94a3b8', fontWeight: '600' }}>Your Account / Delivery Email *</label>
+              <input 
+                type="email" 
+                value={buyerEmail} 
+                onChange={(e) => setBuyerEmail(e.target.value)} 
+                placeholder="name@example.com" 
+                style={{ width: '100%', padding: '12px', borderRadius: '8px', background: '#070b14', border: '1px solid #334155', color: 'white', fontSize: '14px' }} 
+                required 
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+              <button 
+                onClick={() => setCheckoutAsset(null)}
+                style={{ background: '#334155', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: '700', cursor: 'pointer', fontSize: '13px' }}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleProceedToPayment}
+                disabled={buyingId}
+                style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '8px', fontSize: '14px', fontWeight: '800', cursor: 'pointer', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)' }}
+              >
+                {buyingId ? 'Redirecting...' : `I Agree, Proceed to Pay (${checkoutAsset.price}) 🚀`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* DETAIL VIEW MODAL WITH BUY BUTTON */}
       {selectedAssetModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
@@ -210,11 +293,10 @@ export default function Home() {
                 )}
                 {selectedAssetModal.status === 'approved' && (
                   <button 
-                    onClick={() => handleBuyNow(selectedAssetModal)}
-                    disabled={buyingId === selectedAssetModal.id}
+                    onClick={() => handleBuyClick(selectedAssetModal)}
                     style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', border: 'none', padding: '10px 24px', borderRadius: '8px', fontSize: '14px', fontWeight: '800', cursor: 'pointer', boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)' }}
                   >
-                    {buyingId === selectedAssetModal.id ? 'Processing...' : `Buy with Crypto (${selectedAssetModal.price}) 🚀`}
+                    Buy with Crypto ({selectedAssetModal.price}) 🚀
                   </button>
                 )}
               </div>
@@ -715,11 +797,10 @@ export default function Home() {
                         👁️ View Details
                       </button>
                       <button 
-                        onClick={() => handleBuyNow(asset)}
-                        disabled={buyingId === asset.id}
+                        onClick={() => handleBuyClick(asset)}
                         style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', border: 'none', padding: '10px', borderRadius: '8px', fontSize: '13px', fontWeight: '800', cursor: 'pointer', textAlign: 'center', boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)' }}
                       >
-                        {buyingId === asset.id ? 'Loading...' : `Buy (${asset.price})`}
+                        Buy ({asset.price})
                       </button>
                     </div>
                   </div>
