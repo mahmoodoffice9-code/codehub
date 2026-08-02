@@ -133,33 +133,19 @@ export default function Home() {
     }
   }
 
-  // SECURE AUTOMATED API CHECKOUT (NOWPAYMENTS INVOICE API)
+  // PURANA SIMPLE BUY FUNCTION (WAPAS LAAYA GAYA HAI)
   async function handleBuyNow(asset) {
     setBuyingId(asset.id)
     try {
-      const cleanPrice = (asset.price || '0').replace('$', '')
-      
-      const res = await fetch('/api/create-payment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          price: cleanPrice,
-          itemName: asset.title,
-          itemSku: asset.id,
-        }),
-      })
-
-      const data = await res.json()
-      
-      if (data.invoice_url) {
-        window.location.href = data.invoice_url
+      if (asset.link) {
+        window.open(asset.link, '_blank')
         setSelectedAssetModal(null)
       } else {
-        alert(data.error || 'Payment generation failed')
+        alert('Link not available for this asset.')
       }
     } catch (err) {
       console.error(err)
-      alert('Network error. Please try again.')
+      alert('Something went wrong.')
     } finally {
       setBuyingId(null)
     }
@@ -230,7 +216,7 @@ export default function Home() {
                     disabled={buyingId === selectedAssetModal.id}
                     style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', border: 'none', padding: '10px 24px', borderRadius: '8px', fontSize: '14px', fontWeight: '800', cursor: 'pointer', boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)' }}
                   >
-                    {buyingId === selectedAssetModal.id ? 'Processing...' : `Buy with Crypto (${selectedAssetModal.price}) 🚀`}
+                    {buyingId === selectedAssetModal.id ? 'Processing...' : `Get Asset (${selectedAssetModal.price}) 🚀`}
                   </button>
                 )}
               </div>
@@ -646,7 +632,7 @@ export default function Home() {
           {/* Network Badge */}
           <div style={{ textAlign: 'center', marginBottom: '20px' }}>
             <span style={{ background: '#111827', border: '1px solid #1f2937', padding: '6px 16px', borderRadius: '20px', fontSize: '12px', color: '#fbbf24', fontWeight: '600' }}>
-              ⚡ Secure Automated Crypto Checkout • NOWPayments
+              ⚡ CodeHub Marketplace • Ready & Clean
             </span>
           </div>
 
@@ -735,7 +721,7 @@ export default function Home() {
                         disabled={buyingId === asset.id}
                         style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', border: 'none', padding: '10px', borderRadius: '8px', fontSize: '13px', fontWeight: '800', cursor: 'pointer', textAlign: 'center', boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)' }}
                       >
-                        {buyingId === asset.id ? 'Loading...' : `Buy (${asset.price})`}
+                        {buyingId === asset.id ? 'Loading...' : `Get (${asset.price})`}
                       </button>
                     </div>
                   </div>
